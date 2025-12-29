@@ -24,7 +24,8 @@ module fifo #(
     logic [WIDTH-1:0] mem [0:DEPTH-1];
 
     // Pointers
-    logic [$clog2(DEPTH):0] wr_ptr, rd_ptr;
+    logic [ADDR_WIDTH-1:0] wr_ptr, rd_ptr;
+    logic last_op_was_write;
 
     // Write logic
     always_ff @(posedge clock, posedge reset) begin
@@ -33,7 +34,7 @@ module fifo #(
         else begin
             if (wr_en && !full) begin
                 mem[wr_ptr] <= wr_data;
-                wr_ptr <= wr_ptr + 1;
+                wr_ptr <= wr_ptr + 1; // wraps around
             end
         end
     end
@@ -45,9 +46,25 @@ module fifo #(
         else begin
             if (rd_en && !empty) begin
                 rd_data <= mem[rd_ptr];
-                rd_ptr <= rd_ptr + 1;
+                rd_ptr <= rd_ptr + 1; // wraps around
             end
         end
     end
+
+    // Last operation tracking
+    always_ff @(posedge clock, posedge reset) begin
+        if (reset)
+            last_op_was_write <= 1'b0;
+        else begin
+            if (wr_en && !full)
+                last_op_was_write <= 1'b1;
+            else if (rd_en && !empty)
+                last_op_was_write <= 1'b0;
+        end
+    end
+
+    // Full and empty logic
+    assign full  = (wr_ptr == rd_ptr) && last_op_was_write;
+    assign empty = (wr_ptr == rd_ptr) && !last_op_was_write;
 
 endmodule: fifo
