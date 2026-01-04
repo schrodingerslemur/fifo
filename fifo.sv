@@ -21,7 +21,7 @@ module fifo #(
     localparam ADDR_WIDTH = $clog2(DEPTH);
 
     // Registers
-    logic [WIDTH-1:0] mem [0:DEPTH-1];
+    logic [WIDTH-1:0] mem [DEPTH];
 
     // Pointers
     logic [ADDR_WIDTH-1:0] wr_ptr, rd_ptr;
